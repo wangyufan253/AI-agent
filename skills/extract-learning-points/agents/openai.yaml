@@ -1,0 +1,7 @@
+interface:
+  display_name: "提取学习要点"
+  short_description: "从学习材料中提取主题、摘要、关键点和后续学习建议"
+  default_prompt: "Use $extract-learning-points to extract the main information from this study material and return a structured learning result."
+
+policy:
+  allow_implicit_invocation: true
