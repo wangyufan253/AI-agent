@@ -38,7 +38,7 @@
 - `HARNESS_AI_PROVIDER`
 - `HARNESS_AI_API_KEY`
 - `HARNESS_AI_MODEL`
-- `HARNESS_AI_API_URL`
+- `HARNESS_AI_BASE_URL`
 
 如果配置齐全，会优先调用真实模型 provider；如果未配置或你手动指定 `HARNESS_AI_PROVIDER=mock`，系统会回退到 mock provider。
 
