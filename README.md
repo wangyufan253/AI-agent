@@ -1,82 +1,134 @@
 # harness-ai-learning
 
-`harness-ai-learning` 是一个面向中文用户的、以 Harness 为先的 Agent 学习系统样板仓库。这里的重点不只是“生成学习结果”，更是学习如何为 Agent 搭建一个可观测、可评估、可迭代的运行 Harness。
+`harness-ai-learning` 是一个面向中文用户的 CLI 学习助手。用户可以把本地学习材料交给系统，由模型直接读取文件内容，生成结构化的学习结果，并在受控循环下完成最小化的自评估与迭代。
 
-## 从这里开始
+## 项目功能
 
-- 阅读 `AGENTS.md`
-- 打开 `docs/index.md`
-- 运行 `powershell -ExecutionPolicy Bypass -File scripts/context.ps1`
+- 支持分析本地 `.txt`、`.md`、`.pdf` 文件
+- 输出中文学习结果，包括：
+  - 总结
+  - 关键概念
+  - 追问问题
+  - 延伸建议
+- 支持最小 Harness Loop：
+  - `observe`
+  - `decide`
+  - `act`
+  - `verify`
+  - `update_state`
+  - `continue_or_stop`
+- 支持运行记录落盘，可查看最近一次或指定一次运行结果
+- 支持真实模型与 mock provider 两种模式
 
-## 当前学习重点
+## 适用场景
 
-当前阶段已经完成：
+- 快速整理课程笔记
+- 阅读论文后生成中文学习摘要
+- 从技术文档中提炼关键概念
+- 基于原始材料生成追问问题和延伸方向
 
-- 受控执行循环
-- 动作执行层
-- 评估器与策略分离
-- 最小运行记录与查看入口
-- 真实模型 provider 接口与 mock 回退机制
+## 当前支持的命令
 
-## 当前产品切片
+### 1. 分析单个文件
 
-当前 MVP 可以分析本地 `.txt`、`.md` 和 `.pdf` 文件，并返回结构化学习结果。
+```powershell
+$env:PYTHONPATH='src'
+python -m harness_ai_learning analyze samples/intro_note.txt
+python -m harness_ai_learning analyze samples/intro_note.pdf --format json
+```
 
-同时，系统已经具备最小 Harness loop：
+### 2. 运行带评估的学习循环
 
-- 固定的 `RunContext`
-- 动态的 `AgentState`
-- 标准化的 `ActionRequest` / `ActionResult`
-- 独立的 `EvaluationResult`
-- 独立的 `IterationDecision`
-- 落盘到 `runs/` 的 `RunRecord`
+```powershell
+$env:PYTHONPATH='src'
+python -m harness_ai_learning run-loop samples/intro_note.txt
+python -m harness_ai_learning run-loop samples/intro_note.pdf --max-iterations 2 --pass-threshold 0.9
+```
 
-## 模型接入
+### 3. 查看最近一次运行记录
 
-当前 runtime 会优先读取 `.env` 或环境变量：
+```powershell
+$env:PYTHONPATH='src'
+python -m harness_ai_learning show-run
+python -m harness_ai_learning show-run --format json
+```
+
+## 输出内容
+
+系统当前会返回一组结构化学习结果：
+
+- `总结`
+- `关键概念`
+- `追问问题`
+- `延伸建议`
+
+在 `run-loop` 模式下，还会额外返回：
+
+- 当前轮次
+- 动作请求
+- 最近评估
+- 停止原因
+- 记录信息
+
+## 模型配置
+
+项目默认通过 `.env` 或环境变量读取模型配置：
 
 - `HARNESS_AI_PROVIDER`
 - `HARNESS_AI_API_KEY`
 - `HARNESS_AI_MODEL`
 - `HARNESS_AI_BASE_URL`
 
-如果配置齐全，会优先调用真实模型 provider；如果未配置或你手动指定 `HARNESS_AI_PROVIDER=mock`，系统会回退到 mock provider。
+示例：
 
-## 这个仓库里的三大支柱
+```env
+HARNESS_AI_PROVIDER=auto
+HARNESS_AI_API_KEY=your_api_key
+HARNESS_AI_MODEL=qwen-doc-turbo
+HARNESS_AI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+```
 
-### 上下文工程
+如果没有配置真实模型，也可以手动切到 mock：
 
-- `AGENTS.md` 是给 Agent 的简洁入口
-- `docs/` 提供按需打开的中文上下文，而不是一份巨大的说明书
-- `scripts/context.ps1` 和 `scripts/tree.ps1` 提供动态上下文入口
+```powershell
+$env:HARNESS_AI_PROVIDER='mock'
+```
 
-### 架构约束
+## 项目结构
 
-- 源码按 `domain`、`application`、`infrastructure`、`harness`、`runtime`、`interfaces` 分层
-- `scripts/check_architecture.py` 自动验证分层导入规则
-- `docs/contracts/cli.md` 定义 CLI 行为契约
+```text
+src/harness_ai_learning/
+  domain/          领域对象与契约
+  application/     用例编排
+  infrastructure/  provider 与文件处理实现
+  harness/         受控执行循环
+  runtime/         默认装配与运行时配置
+  interfaces/      CLI 入口
+```
 
-### 熵管理
-
-- `scripts/check_docs.py` 验证 Markdown 链接有效性
-- `scripts/check.ps1` 统一运行可重复验证
-- ADR、契约和实现必须同步演进
-- `runs/` 记录稳定运行结果，便于后续加入更强 replay 能力
-
-## 快速命令
+## 本地验证
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m harness_ai_learning analyze samples/intro_note.txt
-python -m harness_ai_learning run-loop samples/intro_note.txt
-python -m harness_ai_learning run-loop samples/intro_note.txt --max-iterations 2 --pass-threshold 0.9
-python -m harness_ai_learning show-run
+$env:HARNESS_AI_PROVIDER='mock'
 python -m unittest discover -s tests -p "test_*.py"
+python scripts/check_architecture.py
+python scripts/check_docs.py
 powershell -ExecutionPolicy Bypass -File scripts/check.ps1
 ```
 
-## 下一步演进方向
+## 当前状态
 
-- 用更可信的 evaluator 替换当前教学型启发式打分
-- 为动作执行层加入参数校验、失败分类和重试入口
-- 在已有 `RunRecord` 基础上再引入真正的 replay
+当前版本已经可以完成：
+
+- 文件直传模型分析
+- 中文学习结果生成
+- 最小自循环迭代
+- 运行记录查看
+
+后续可以继续扩展：
+
+- 更可信的 evaluator
+- 多动作规划
+- 更强的 replay / experiment 能力
+- 图片输入与更完整的多模态支持
