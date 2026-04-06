@@ -1,0 +1,12 @@
+.pytest_cache/
+__pycache__/
+.venv/
+dist/
+build/
+*.pyc
+*.pyo
+*.pyd
+.env
+outputs/
+runs/
+tests/_tmp/

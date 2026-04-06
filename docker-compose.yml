@@ -1,0 +1,10 @@
+services:
+  app:
+    build:
+      context: .
+    image: harness-ai-learning:dev
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      HARNESS_AI_PROVIDER: mock
